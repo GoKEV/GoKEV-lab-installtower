@@ -1,8 +1,28 @@
 ---
 # tasks file for GoKEV-lab-installtower
 
-- name: Creates directory
-  file: 
+- name: check if we need to do installer things
+  uri:
+    url: https://localhost/api/v1/ping/
+    method: GET
+    user: admin
+    password: "{{ towerpass }}"
+    validate_certs: False 
+  register: checkout
+  ignore_errors: True
+
+- name: set condtional if the above didn't error
+  set_fact:
+    towerchk: "{{ checkout.json.version }}"
+  when: checkout.json is defined
+
+- name: Clears install directory
+  file:
+    path: /root/ansible-installer/
+    state: absent
+
+- name: Creates install directory
+  file:
     path: /root/ansible-installer/
     state: directory
 
@@ -17,19 +37,37 @@
   lineinfile:
     path: /root/ansible-installer/inventory
     regexp: ^admin_password=
-    line: admin_password='redhat'
+    line: "admin_password='{{ towerpass }}'"
 
 - name: Add pg_password to the inventory file
   lineinfile:
     path: /root/ansible-installer/inventory
     regexp: ^pg_password=
-    line: pg_password='redhat'
+    line: "pg_password='{{ towerpass }}'"
 
 - name: Add rabbitmq_password to the inventory file
   lineinfile:
     path: /root/ansible-installer/inventory
     regexp: ^rabbitmq_password=
-    line: rabbitmq_password='redhat'
+    line: "rabbitmq_password='{{ towerpass }}'"
 
-- name: Run the installer
-  raw: cd cd /root/ansible-installer && ./setup.sh
+- name: run the tower installer
+  shell: ./setup.sh
+  args:
+    chdir: /root/ansible-installer/
+
+- name: wait for tower to be up
+  uri:
+    url: https://localhost/api/v1/ping/
+    method: GET
+    user: admin
+    password: redhat
+    validate_certs: False
+    force_basic_auth: yes
+  register: check2
+  until: check2.json is defined
+  retries: 10
+  delay: 30
+
+
+
