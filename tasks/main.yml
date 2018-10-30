@@ -1,2 +1,35 @@
 ---
 # tasks file for GoKEV-lab-installtower
+
+- name: Creates directory
+  file: 
+    path: /root/ansible-installer/
+    state: directory
+
+- name: Grab the latest Tower installer
+  unarchive:
+    src: http://releases.ansible.com/ansible-tower/setup/ansible-tower-setup-latest.tar.gz
+    dest: /root/ansible-installer/
+    remote_src: yes
+    extra_opts: [--strip-components=1]
+
+- name: Add admin_password to the inventory file
+  lineinfile:
+    path: /root/ansible-installer/inventory
+    regexp: ^admin_password=
+    line: admin_password='redhat'
+
+- name: Add pg_password to the inventory file
+  lineinfile:
+    path: /root/ansible-installer/inventory
+    regexp: ^pg_password=
+    line: pg_password='redhat'
+
+- name: Add rabbitmq_password to the inventory file
+  lineinfile:
+    path: /root/ansible-installer/inventory
+    regexp: ^rabbitmq_password=
+    line: rabbitmq_password='redhat'
+
+- name: Run the installer
+  raw: cd cd /root/ansible-installer && ./setup.sh
