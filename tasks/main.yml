@@ -8,18 +8,19 @@
     user: admin
     password: "{{ towerpass }}"
     validate_certs: False 
-  register: checkout
+  register: tower_ping
   ignore_errors: True
 
 - name: set condtional if the above didn't error
   set_fact:
-    towerchk: "{{ checkout.json.version }}"
-  when: checkout.json is defined
+    tower_ver: "{{ tower_ping.json.version }}"
+  when: tower_ping.json is defined
 
 - name: Clears install directory
   file:
     path: /root/ansible-installer/
     state: absent
+  when: tower_ver is not defined
 
 - name: Creates install directory
   file:
@@ -32,29 +33,41 @@
     dest: /root/ansible-installer/
     remote_src: yes
     extra_opts: [--strip-components=1]
+  when: tower_ver is not defined
 
 - name: Add admin_password to the inventory file
   lineinfile:
     path: /root/ansible-installer/inventory
     regexp: ^admin_password=
     line: "admin_password='{{ towerpass }}'"
+  when: tower_ver is not defined
 
 - name: Add pg_password to the inventory file
   lineinfile:
     path: /root/ansible-installer/inventory
     regexp: ^pg_password=
     line: "pg_password='{{ towerpass }}'"
+  when: tower_ver is not defined
 
 - name: Add rabbitmq_password to the inventory file
   lineinfile:
     path: /root/ansible-installer/inventory
     regexp: ^rabbitmq_password=
     line: "rabbitmq_password='{{ towerpass }}'"
+  when: tower_ver is not defined
+
+- name: Strip out preflight from running
+  lineinfile:
+    path: /root/ansible-installer/install.yml
+    state: absent
+    regexp: '^.*preflight.*$'
+  when: tower_ver is not defined
 
 - name: run the tower installer
   shell: ./setup.sh
   args:
     chdir: /root/ansible-installer/
+  when: tower_ver is not defined
 
 - name: wait for tower to be up
   uri:
@@ -68,6 +81,27 @@
   until: check2.json is defined
   retries: 10
   delay: 30
+  when: tower_ver is not defined
 
+- name: Post license key
+  uri:
+    url: https://localhost/api/v1/config/
+    method: POST
+    user: admin
+    password: "{{ towerpass }}"
+    body: "{{ lookup('file','files/tower-license.json') }}"
+    body_format: json
+    validate_certs: False
+    force_basic_auth: yes
+  ignore_errors: True
+
+- debug:
+    msg: "This system {{ inventory_hostname }} is running with Ansible Tower version {{ tower_ver }}"
+  when: tower_ver is defined
+
+- name: Clears install directory
+  file:
+    path: /root/ansible-installer/
+    state: absent
 
 
