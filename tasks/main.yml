@@ -7,9 +7,10 @@
     method: GET
     user: admin
     password: "{{ towerpass }}"
-    validate_certs: False 
+    validate_certs: False
   register: tower_ping
   ignore_errors: True
+  failed_when: False
 
 - name: set condtional if the above didn't error
   set_fact:
@@ -26,6 +27,7 @@
   file:
     path: /root/ansible-installer/
     state: directory
+  when: tower_ver is not defined
 
 - name: Grab the latest Tower installer
   unarchive:
@@ -95,13 +97,12 @@
     force_basic_auth: yes
   ignore_errors: True
 
-- debug:
-    msg: "This system {{ inventory_hostname }} is running with Ansible Tower version {{ tower_ver }}"
-  when: tower_ver is defined
-
 - name: Clears install directory
   file:
     path: /root/ansible-installer/
     state: absent
 
+- debug:
+    msg: "This system {{ inventory_hostname }} is running with Ansible Tower version {{ tower_ver }}"
+  when: tower_ver is defined
 
