@@ -1,40 +1,80 @@
-Role Name
-=========
+[![GoKEV](http://GoKEV.com/GoKEV200.png)](http://GoKEV.com/)
 
-A brief description of the role goes here.
+<div style="position: absolute; top: 40px; left: 200px;">
 
-Requirements
-------------
+# GoKEV-lab-provision
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+This project is an Ansible role to deploy one or many EC2 instances for lab purposes
+  - This role assumes you're feeding credentials through an Ansible Tower credential type
 
-Role Variables
---------------
+  - This role is run as a subsequent task of the lab provisioner mentioned in the requirements.yml
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+## Example Playbooks
+Here's an example of how you could launch this role
 
-Dependencies
-------------
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+<pre>
+---
+- name: Build an EC2 instance
+  hosts: localhost
+  gather_facts: no
 
-Example Playbook
-----------------
+  vars:
+    user_sshkey: my-private-key
+    user_instype: t2.small
+    user_image: ami-26ebbc5c
+    user_vpc: vpc-a12345678
+    user_subnet: subnet-12345678
+    user_secgrp: security-group-name
+    user_awskey: ABCDEFGHIJKLMNOPQRST
+    user_awssec: abcdefghijklmnopqrstuvwxyz0123456789
+    user_region: us-east-1
+    user_tags:
+      Name: GoKEV EC2 Lab
+      Event: Some Workshop Event
+      Owner: GoKEV
+      Contact: "kev@redhat.com"
+      Application: AnsibleRED
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+  roles:
+    - GoKEV-lab-provision
 
-    - hosts: servers
-      roles:
-         - { role: username.rolename, x: 42 }
+- hosts: newec2
+  roles:
+    - GoKEV-lab-installtower
+    - GoKEV-lab-configtower
 
-License
--------
+</pre>
 
-BSD
+## With a requirements.yml that looks as such:
 
-Author Information
-------------------
+<pre>
+---
+- name: GoKEV.lab-provision
+  version: master
+  src: https://github.com/GoKEV/GoKEV-lab-provision.git
 
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
-# GoKEV-lab-installtower
-# GoKEV-lab-installtower
+- name: GoKEV.lab-installtower
+  version: master
+  src: https://github.com/GoKEV/GoKEV-lab-installtower.git
+
+- name: GoKEV.lab-configtower
+  version: master
+  src: https://github.com/GoKEV/GoKEV-lab-configtower.git
+
+</pre>
+
+
+## Troubleshooting & Improvements
+
+- Not enough testing yet
+
+## Notes
+
+  - Not enough testing yet
+
+## Author
+
+This project was created in 2018 by [Kevin Holmes](http://GoKEV.com/).
+
+
