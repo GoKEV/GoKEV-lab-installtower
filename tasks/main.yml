@@ -1,7 +1,7 @@
 ---
 # tasks file for GoKEV-lab-installtower
 
-- name: check if we need to do installer things
+- name: Check if Tower is running and responding
   uri:
     url: https://localhost/api/v1/ping/
     method: GET
@@ -9,7 +9,6 @@
     password: "{{ towerpass }}"
     validate_certs: False
   register: tower_ping
-  ignore_errors: True
   failed_when: False
 
 - name: set condtional if the above didn't error
@@ -37,25 +36,16 @@
     extra_opts: [--strip-components=1]
   when: tower_ver is not defined
 
-- name: Add admin_password to the inventory file
-  lineinfile:
-    path: /root/ansible-installer/inventory
-    regexp: ^admin_password=
-    line: "admin_password='{{ towerpass }}'"
-  when: tower_ver is not defined
 
-- name: Add pg_password to the inventory file
+- name: Set some passwords in the inventory file
   lineinfile:
     path: /root/ansible-installer/inventory
-    regexp: ^pg_password=
-    line: "pg_password='{{ towerpass }}'"
-  when: tower_ver is not defined
-
-- name: Add rabbitmq_password to the inventory file
-  lineinfile:
-    path: /root/ansible-installer/inventory
-    regexp: ^rabbitmq_password=
-    line: "rabbitmq_password='{{ towerpass }}'"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items:
+    - { regexp: "^admin_password=", line: "admin_password='{{ towerpass }}'" }
+    - { regexp: "^pg_password=", line: "pg_password='{{ towerpass }}'" }
+    - { regexp: "^rabbitmq_password=", line: "rabbitmq_password='{{ towerpass }}'" }
   when: tower_ver is not defined
 
 - name: Strip out preflight from running
